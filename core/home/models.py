@@ -3,9 +3,9 @@ from django.contrib.auth.models import AbstractUser
 from home.manager import UserManager
 
 class User(AbstractUser):
-    username = None
-    email = models.EmailField(unique=True)
+    username = None # Overrides the default username field provided by AbstractUser
     username = models.CharField(unique=True, max_length=16)
+    email = models.EmailField(unique=True)
     bio = models.CharField(max_length=150, null=True, blank=True)
 
     is_staff = models.BooleanField(default=False)
