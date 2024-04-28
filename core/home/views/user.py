@@ -14,6 +14,11 @@ class CreateUser(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    
+class RetrieveUser(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
 
 class LoginView(APIView):
 
@@ -39,7 +44,7 @@ class LoginView(APIView):
             except ObjectDoesNotExist:
                 return Response({
                     'success' : False,
-                    'message' : 'User does not exist.'
+                    'message' : 'User does not exists.'
             }, status=status.HTTP_404_NOT_FOUND)
 
         return Response({
@@ -47,11 +52,6 @@ class LoginView(APIView):
             'message' : 'Something went wrong.',
             'error' : serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-
-    
-class RetriveUser(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 
 class UpdateUser(APIView):
@@ -67,7 +67,7 @@ class UpdateUser(APIView):
             serializer.save()
             return Response({
                 'success': True,
-                'message': 'User updated successfully.'
+                'message': 'Profile updated successfully.'
             }, status=status.HTTP_200_OK)
         
         else:
@@ -89,11 +89,11 @@ class DeleteUser(generics.DestroyAPIView):
     def destroy(self, request, pk):
         try:
             user = User.objects.get(id = pk)
-            if pk == request.user.id:
+            if user.id == request.user.id:
                 self.perform_destroy(request.user)
                 return Response({
                     'success' : True,
-                    'message' : 'User deleted successfully.'
+                    'message' : 'Account deleted successfully.'
                 }, status.HTTP_200_OK)
             
             else:
@@ -105,5 +105,5 @@ class DeleteUser(generics.DestroyAPIView):
         except ObjectDoesNotExist:
             return Response({
                 'success' : False,
-                'message' : 'User does not exist.'
+                'message' : 'User does not exists.'
             }, status.HTTP_404_NOT_FOUND)

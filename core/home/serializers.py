@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import User
+from .models import User, Post
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -22,3 +22,17 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
+
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = "__all__"
+
+        title = serializers.CharField()
+        description = serializers.CharField()
+        user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+        def update(self, instance, validated_data):
+            if instance.user.id == validated_data['user']:
+                return super().update(instance, validated_data)
