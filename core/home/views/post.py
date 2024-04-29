@@ -1,10 +1,11 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
+from rest_framework.views import APIView 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ObjectDoesNotExist
-from home.models import Post
+from home.models import Post, User, PostLike
 from home.serializers import PostSerializer
 
 class CreatePost(generics.CreateAPIView):
@@ -18,7 +19,7 @@ class CreatePost(generics.CreateAPIView):
 class RetrievePost(generics.RetrieveAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-
+    
     
 class UpdatePost(generics.RetrieveAPIView):
     authentication_classes = [TokenAuthentication]
@@ -71,3 +72,49 @@ class DeletePost(generics.DestroyAPIView):
                 'success' : False,
                 'message' : 'Post does not exists.'
             }, status=status.HTTP_404_NOT_FOUND)
+        
+
+class RetrieveUserPosts(generics.ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+
+    def list(self, request, *args, **kwargs):
+        user = User.objects.get(id=request.user.id)
+        user_posts = Post.objects.filter(user=request.user.id)
+        serializer = self.serializer_class(user_posts, many=True)
+        return Response({
+            'success' : True,
+            'message' : f'Posts by : {user.username}',
+            'posts' : serializer.data
+        })
+
+
+class LikeOnPost(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = PostSerializer
+
+    def get(self, request, pk):
+        try:
+            post = Post.objects.get(id=pk)
+            new_like = PostLike.objects.get_or_create(user=request.user, post=post)
+            if new_like[1]:
+                return Response({
+                    'success' : True,
+                    'message' : 'Post Liked.'
+                })
+            else:
+                new_like[0].delete()
+                return Response({
+                    'success' : True,
+                    'message' : 'Post Unliked.'
+                })
+        except ObjectDoesNotExist:
+            return Response({
+                'success' : False,
+                'message' : 'Post does not exists.'
+            })
+        
