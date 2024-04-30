@@ -33,3 +33,10 @@ class PostLike(models.Model):
     class Meta:
         unique_together = (('user','post'), )
 
+
+class PostComment(models.Model):
+    comment = models.CharField(max_length=250)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, null=False, on_delete=models.CASCADE)

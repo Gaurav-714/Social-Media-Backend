@@ -4,9 +4,10 @@ from rest_framework import generics
 from rest_framework.views import APIView 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
-from home.models import Post, User, PostLike
-from home.serializers import PostSerializer
+from home.models import Post, User, PostLike, PostComment
+from home.serializers import PostSerializer, PostCommentSerializer
 
 class CreatePost(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
@@ -118,3 +119,45 @@ class LikeOnPost(APIView):
                 'message' : 'Post does not exists.'
             })
         
+
+class CommentOnPost(generics.CreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    queryset = PostComment.objects.all()
+    serializer_class = PostCommentSerializer
+
+    def get(self, request, pk):
+        post = get_object_or_404(Post, id=pk)
+        comments = PostComment.objects.filter(post=post)
+        serializer = self.serializer_class(comments, many=True)
+        print(comments)
+        print(serializer.data)
+        return Response({
+            'success' : True,
+            'data' : serializer.data
+        })
+    
+    def post(self, request, pk):
+        try:
+            post = Post.objects.get(id=pk)
+            request.data['post'] = post
+            print(request.data)
+            serializer = PostCommentSerializer(data=request.data, context={'request': request})
+            if serializer.is_valid():
+                return Response({
+                    'success' : True,
+                    'message' : 'Comment posted successfully.',
+                    'data' : serializer.data
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'success' : False,
+                     'message' : 'Error while posting comment.',
+                     'error' : serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            return Response({
+                'success' : False,
+                'message' : 'Post does not exists.' 
+            }, status=status.HTTP_404_NOT_FOUND)

@@ -15,4 +15,5 @@ urlpatterns = [
     path('post/delete/<int:pk>', DeletePost.as_view()),
     path('posts', RetrieveUserPosts.as_view()),
     path('post/like/<int:pk>', LikeOnPost.as_view()),
+    path('post/comment/<int:pk>', CommentOnPost.as_view()),
 ]
