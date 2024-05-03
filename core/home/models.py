@@ -19,7 +19,8 @@ class User(AbstractUser):
 
 
 class Post(models.Model):
-    title = models.CharField(max_length=30)
+    image = models.ImageField(max_length=None)
+    #title = models.CharField(max_length=30)
     description = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,3 +41,8 @@ class PostComment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, null=False, on_delete=models.CASCADE)
+
+
+class FollowUser(models.Model):
+    followed_by = models.ForeignKey(User, null=False, on_delete=models.CASCADE, related_name='follower')
+    following_to = models.ForeignKey(User, null=False, on_delete=models.CASCADE, related_name='following')

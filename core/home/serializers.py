@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import User, Post, PostComment
+from .models import User, Post, PostLike, PostComment
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data.get('password'))
         return User.objects.create(**validated_data)
-    
+   
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -25,7 +25,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    title = serializers.CharField()
+    image = serializers.ImageField()
     description = serializers.CharField()
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
@@ -37,20 +37,29 @@ class PostSerializer(serializers.ModelSerializer):
         return Post.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.title = validated_data.get('title', instance.title)
-        instance.description = validated_data.get('title', instance.description)
+        instance.image = validated_data.get('image', instance.image)
+        instance.description = validated_data.get('description', instance.description)
         instance.save()
         return instance
 
 
-class PostCommentSerializer(serializers.ModelSerializer):
-    comment = serializers.CharField(required=True)
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+class PostLikeSerializer(serializers.Serializer):
+    class Meta:
+        model = PostLike
+        fields = "__all__"
+
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
     post = serializers.PrimaryKeyRelatedField(read_only=True)
-  
+
+
+class PostCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostComment
         fields = "__all__"
+
+    comment = serializers.CharField(required=True)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    post = serializers.PrimaryKeyRelatedField(read_only=True)
 
     def create(self, validated_data):
         print("Validated Data:", validated_data)
@@ -66,3 +75,7 @@ class PostCommentSerializer(serializers.ModelSerializer):
         self.post = kwargs['post']
         return super().save(**kwargs)"""
     
+
+class FollowUserSerializer(serializers.Serializer):
+    followed_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    following_to = serializers.PrimaryKeyRelatedField(read_only=True)

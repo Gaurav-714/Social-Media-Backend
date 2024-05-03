@@ -4,10 +4,12 @@ from rest_framework import generics
 from rest_framework.views import APIView 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
+
 from home.models import Post, User, PostLike, PostComment
-from home.serializers import PostSerializer, PostCommentSerializer
+from home.serializers import PostSerializer, PostLikeSerializer, PostCommentSerializer
 
 class CreatePost(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
@@ -30,20 +32,26 @@ class UpdatePost(generics.RetrieveAPIView):
     serializer_class = PostSerializer
 
     def put(self, request, pk):
-        post = Post.objects.get(id=pk)
-        serializer = PostSerializer(post, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response({
-                'success' : True,
-                'message' : 'Post updated successfully.'
-            }, status.HTTP_200_OK)
-        else:
+        try:
+            post = Post.objects.get(id=pk)
+            serializer = PostSerializer(post, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return Response({
+                    'success' : True,
+                    'message' : 'Post updated successfully.'
+                }, status.HTTP_200_OK)
+            else:
+                return Response({
+                    'success' : False,
+                    'message' : 'Error while updating post.',
+                    'error' : serializer.errors
+                }, status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
             return Response({
                 'success' : False,
-                'message' : 'Error while updating post.',
-                'error' : serializer.errors
-            }, status.HTTP_400_BAD_REQUEST)
+                'message' : 'Post does not exists.'
+            }, status=status.HTTP_404_NOT_FOUND)
 
 
 class DeletePost(generics.DestroyAPIView):
@@ -67,7 +75,6 @@ class DeletePost(generics.DestroyAPIView):
                     'success' : False,
                     'message' : 'Not enough permissions.'
                 }, status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
-            
         except ObjectDoesNotExist:
             return Response({
                 'success' : False,
@@ -88,17 +95,32 @@ class RetrieveUserPosts(generics.ListAPIView):
         serializer = self.serializer_class(user_posts, many=True)
         return Response({
             'success' : True,
-            'message' : f'Posts by : {user.username}',
+            'message' : f'Posts by {user.username}',
             'posts' : serializer.data
         })
 
 
-class LikeOnPost(APIView):
+class LikePost(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = PostSerializer
 
     def get(self, request, pk):
+        try:
+            post = Post.objects.get(id=pk)
+            likes = PostLike.objects.filter(post=post)
+            serializer = PostLikeSerializer(likes, many=True)
+            return Response({
+                'success' : True,
+                'likes' : serializer.data
+            })
+        except ObjectDoesNotExist:
+            return Response({
+                'success' : False,
+                'message' : 'Post does not exists.'
+            })
+
+    def post(self, request, pk):
         try:
             post = Post.objects.get(id=pk)
             new_like = PostLike.objects.get_or_create(user=request.user, post=post)
@@ -120,7 +142,7 @@ class LikeOnPost(APIView):
             })
         
 
-class CommentOnPost(generics.CreateAPIView):
+class CommentPost(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -135,7 +157,7 @@ class CommentOnPost(generics.CreateAPIView):
         print(serializer.data)
         return Response({
             'success' : True,
-            'data' : serializer.data
+            'comments' : serializer.data
         })
     
     def post(self, request, pk):
@@ -161,3 +183,4 @@ class CommentOnPost(generics.CreateAPIView):
                 'success' : False,
                 'message' : 'Post does not exists.' 
             }, status=status.HTTP_404_NOT_FOUND)
+        
