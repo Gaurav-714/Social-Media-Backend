@@ -19,8 +19,7 @@ class User(AbstractUser):
 
 
 class Post(models.Model):
-    image = models.ImageField(max_length=None)
-    #title = models.CharField(max_length=30)
+    image = models.ImageField(upload_to='post_imgs', max_length=None)
     description = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
